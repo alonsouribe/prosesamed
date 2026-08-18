@@ -1,66 +1,93 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## Requisitos
+ 
+- PHP 8.3
+- Composer
+- MySQL o MariaDB
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Instalación
+ 
+```bash
+git clone https://github.com/alonsouribe/prosesamed
+cd prosesamed
+composer install
+cp .env.example .env
+```
 
-## About Laravel
+Configurar en `.env`:
+```
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=prosesamed
+DB_USERNAME=***  root  ***
+DB_PASSWORD=***  root  ***
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+QUEUE_CONNECTION=database
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Crear la base de datos y correr migraciones:
+```sql
+CREATE DATABASE prosesamed;
+```
+```bash
+php artisan migrate
+```
 
-## Learning Laravel
+## Cargar datos de prueba
+ 
+Genera 500,000 ventas simuladas:
+```bash
+php artisan db:seed
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Levantar el proyecto
+ 
+Se necesitan dos terminales abiertas al mismo tiempo:
+ 
+```bash
+# Terminal 1, servidor
+php artisan serve
+ 
+# Terminal 2, colas (necesario para el exportación)
+php artisan queue:work
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Endpoints
+ 
+| Método | Endpoint | Descripción |
+|---|---|---|
+| GET | `/api/ventas?sucursal=5&status=1&por_pagina=10` | Listado paginado (keyset) |
+| GET | `/api/ventas/offset?sucursal=5&status=1&pagina=1` | Listado paginado (OFFSET, solo era comparar) |
+| GET | `/api/ventas/excel?sucursal=5&status=1` | Genera el reporte CSV (asíncrono). Responde con `reporte_id` |
+| GET | `/api/reportes/{id}/descargar` | Descarga el reporte cuando su estado es `listo` |
+ 
+## Correr pruebas
+ 
+```bash
+php artisan test
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Pruebas unitarias del cálculo de saldo/deuda en `tests/Unit/CalculadoraDeSaldoTest.php`.
 
-## Laravel Sponsors
+## Estructura (capas)
+ 
+```
+app/
+-> Http/Controllers/ -> recibe el request y delega
+-> Http/Requests/ -> validación de entrada
+-> Domain/Venta/ -> reglas de negocio (CalculadoraDeSaldo, interfaces)
+-> Application/Venta/ -> orquestación (Services)
+-> Infrastructure/Persistence/ -> acceso a datos (Eloquent)
+-> Jobs/ -> exportación asíncrono
+-> Models/ -> modelos Eloquent
+```
+## Evidencia
+ 
+Archivos de respaldo`:
+ 
+- `evidencia_explain_antes.txt` resultado de `EXPLAIN` antes de corregir.
+- `evidencia_explain_despues.txt` resultado de `EXPLAIN` después de la corrección.
+- `evidencia_paginacion_offset.txt` / `evidencia_paginacion_keyset.txt` solo eran comparar rendimiento.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Los reportes se guardan en `storage/app/reportes/`.
