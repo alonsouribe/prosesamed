@@ -242,7 +242,6 @@ Route::get('/reportes/{id}/descargar', [VentasController::class, 'descargarRepor
 antes que todo ejecutar esto, para crear las tablas de jobs
 php artisan queue:table
 
-
 y modificar .env
 QUEUE_CONNECTION=database
 para que se guarde lios jobs en la tabla
@@ -269,3 +268,25 @@ para descargar el reporte, accedemos a
 http://127.0.0.1:8000/api/reportes/1/descargar
 
 en donde 1, es el id del reporte
+
+
+
+prueba rendimiento de paginación.
+
+seleccionamos una posición para offset
+
+mysql -u root -P 3307 -p
+USE prosesamed;
+EXPLAIN SELECT * FROM ventas  WHERE id_sucursal = 5 AND status = 1  ORDER BY fecha_venta LIMIT 10 OFFSET 8000;
+
+
+seleccionamos una posición para keyset
+
+mysql -u root -P 3307 -p
+USE prosesamed;
+
+// buscamos una fecha
+SELECT fecha_venta FROM ventas WHERE id_sucursal = 5 AND status = 1  ORDER BY fecha_venta DESC  LIMIT 1 OFFSET 4000;
+
+//tomamos la fecha y comparamos
+EXPLAIN SELECT * FROM ventas WHERE id_sucursal = 5 AND status = 1 AND fecha_venta < '2025-01-06' ORDER BY fecha_venta DESC LIMIT 10;
